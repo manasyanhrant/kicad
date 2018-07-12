@@ -1,3 +1,6 @@
 [submodule "wxWidgets"]
 	path = wxWidgets
 	url = https://github.com/wxWidgets/wxWidgets.git
+[submodule "kicad"]
+	path = kicad
+	url = https://git.launchpad.net/kicad

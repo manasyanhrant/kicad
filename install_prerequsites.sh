@@ -1,6 +1,7 @@
 #!/bin/bash
 
-wx_widget_version="tags/v3.0.4"
+wx_widget_version="v3.0.4"
+cores=`cat /proc/cpuinfo | awk '/^processor/{print $3}' | wc -l `
 
 # Commands
 check_for_error(){
@@ -11,40 +12,97 @@ check_for_error(){
 		exit 1;
 	fi
 }
+
+install_ngspice(){
+	url="http://de.archive.ubuntu.com/ubuntu/pool/multiverse/n/ngspice/ngspice_27-1_amd64.deb"
+	wget $url -P /tmp
+	check_for_error $? "Getting ngspice failed"
+	sudo dpkg -i ngspice_27-1_amd64.deb
+	check_for_error $? "Installing ngspice failed"
+}
+
 install_tools(){
-	sudo apt-get install gcc g++ build-essential cmake git doxygen swig
+	packages=" gcc g++ build-essential cmake git doxygen"
+	packages+=" libgtk2.0-dev libgtk-3-dev " # Needed for wxWidget
+	packages+=" swig" # SWIG is used to generate the Python scripting
+					  # language extensions for KiCad
+	packages+=" libglm-dev" # The OpenGL Mathematics Library is an
+							# OpenGL helper library used by the KiCad 
+							# graphics abstraction library
+							# [GAL] and is always required to build KiCad.
+	packages+=" libglew-dev" # The OpenGL Extension Wrangler is an
+							 # OpenGL helper library used by the KiCad 
+							 # graphics abstraction library
+							 # [GAL] and is always required to build KiCad.
+	packages+=" freeglut3-dev" # Helper of glew
+	packages+=" libcairo2-dev" # 2D graphic library for rendering
+							   # canvas when OpenGL is not available
+	packages+=" python python3 python-dev python-wxgtk3.0*" 
+	packages+=" libcurl3 libcurl3-dev" # For secure git file transfer
+	packages+=" liboce-foundation-dev liboce-modeling-dev liboce-ocaf-dev liboce-visualization-dev" 
+	packages+=" libboost-all-dev libbz2-dev libssl-dev" # Other
+	# Not needed for my case. I built this libraries myself
+	# packages+="  libwxgtk3.0-0v5 libwxgtk3.0" 
+	sudo apt-get -y install $packages
 	check_for_error $? "Failed to install tools"
+	install_ngspice
+	sudo apt autoremove
+	check_for_error $? "apt-get autoremove "
 }
 
 update_git_submodules(){
 	git submodule init
 	check_for_error $? "Submodule init"
-	git submodule update
-	check_for_error $? "Submodule update"
-	sudo apt autoremove
-	check_for_error $? "apt-get autoremove "
-	echo "TESTTTTTTTTTTT"
+	git submodule update -f
+	check_for_error $? "Submodule Update"
 }
 # Libraries
 
 # GUI library
 install_wx_widget_library(){
 	cd wxWidgets/
-	git checkout $wx_widget_version 
-	check_for_error $? "004"
-	../configure --enable-unicode --enable-debug
-	check_for_error $? "005"
-	make -j12
-	check_for_error $? "006"
-	make install
-	check_for_error $? "007"
+	git checkout  "tags/$wx_widget_version"
+	# TODO: Gives error when running second time after first
+	# succesfull run
+	#check_for_error $? "git checkout wxWidgets"
+	if [ ! -f './Makefile' ]; then
+			./configure --enable-unicode --with-opengl
+			check_for_error $? "Configuring wxWidgets"
+	fi
+	make "-j$cores"
+	check_for_error $? "make wxWidgets"
+	sudo make install
+	check_for_error $? "make install wxWidgets"
 	cd -
+}
+
+# Build KiCad
+build_kicad(){
+		cd kicad
+		mkdir -p build/
+		cd build
+		cmake -DCMAKE_BUILD_TYPE=Release 
+		-DKICAD_SCRIPTING_WXPYTHON=ON \
+		-DKICAD_SCRIPTING=ON \ 
+		-DKICAD_SCRIPTING_MODULES=ON \
+		-DKICAD_SCRIPTING_ACTION_MENU=ON \
+		-DKICAD_INSTALL_DEMOS=ON \
+		-DKICAD_USE_OCE=ON \
+		-DKICAD_SPICE=ON \
+		../
+		check_for_error $? "Configuring kicad"
+		make
+		check_for_error $? "Building kicad"
+		sudo make install
+		check_for_error $? "Installing kicad"
+		cd ../../
 }
 
 main(){
 	install_tools
 	update_git_submodules
-	#install_wx_widget_library 
+	install_wx_widget_library
+	build_kicad
 }
 
 main
