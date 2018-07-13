@@ -10,3 +10,6 @@
 [submodule "digikey-kicad-library"]
 	path = digikey-kicad-library
 	url = https://github.com/digikey/digikey-kicad-library.git
+[submodule "kicad-3d-models-in-freecad"]
+	path = kicad-3d-models-in-freecad
+	url = https://github.com/easyw/kicad-3d-models-in-freecad
