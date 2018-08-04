@@ -43,6 +43,15 @@ install_swig(){
 	fi
 }
 
+install_python_wxgtk2(){
+	sudo add-apt-repository ppa:nilarimogard/webupd8
+	check_for_error $? "Failed to add wxgtk2 repo"
+	sudo apt-get update 
+	check_for_error $? "Failed to update wxgtk2 repo "
+	sudo apt-get install python-wxgtk2.8
+	check_for_error $? "Failed to install wxgtk2 "
+}
+
 install_tools(){
 	packages=" gcc g++ build-essential cmake git doxygen flex "
 	packages+=" libgtk2.0-dev libgtk-3-dev " # Needed for wxWidget
@@ -58,6 +67,8 @@ install_tools(){
 	packages+=" freeglut3-dev " # Helper of glew
 	packages+=" libcairo2-dev " # 2D graphic library for rendering
 							   # canvas when OpenGL is not available
+	packages+=" python python3 python-dev " 
+	# gtk3 (wxgtk3.0) has some issues for the moment 01/08/2018
 	packages+=" python python3 python-dev python-wxgtk3.0* " 
 	packages+=" libcurl3 libcurlpp-dev " # For secure git file transfer
 	packages+=" liboce-foundation-dev liboce-modeling-dev liboce-ocaf-dev liboce-visualization-dev " 
@@ -67,8 +78,9 @@ install_tools(){
 	packages+=" libwxgtk3.0-0v5 libwxgtk3.0 " 
 	sudo apt-get -y install $packages
 	check_for_error $? "Failed to install tools"
-	sudo pip install wxPython #--upgrade
+	#sudo pip install wxPython #--upgrade
 	check_for_error $? "Failed to install wxPython"
+	#install_python_wxgtk2
 	install_ngspice
 	install_swig
 	sudo apt autoremove
@@ -106,7 +118,8 @@ build_kicad(){
 		cd kicad
 		mkdir -p build/
 		cd build
-		cmake -DCMAKE_BUILD_TYPE=Release -DKICAD_SCRIPTING_WXPYTHON=ON \
+		# -DKICAD_SCRIPTING_WXPYTHON=ON
+		cmake -DCMAKE_BUILD_TYPE=Release -DKICAD_SCRIPTING_WXPYTHON=OFF \
 		-DKICAD_SCRIPTING=ON  -DKICAD_SCRIPTING_MODULES=ON \
 		-DKICAD_SCRIPTING_ACTION_MENU=ON  -DKICAD_INSTALL_DEMOS=ON \
 		-DKICAD_USE_OCE=ON -DKICAD_SPICE=ON ../

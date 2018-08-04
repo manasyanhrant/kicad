@@ -28,3 +28,6 @@
 [submodule "altium2kicad"]
 	path = altium2kicad
 	url = https://github.com/thesourcerer8/altium2kicad.git
+[submodule "kicad-templates"]
+	path = kicad-templates
+	url = https://github.com/KiCad/kicad-templates.git
